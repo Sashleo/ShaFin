@@ -1,0 +1,38 @@
+{#
+  The per-analysis assumptions panel. Expects: analysis, assumptions [Assumption],
+  saved_assumptions {key: {...}}, assumption_form {key: (value, source, as_of)},
+  assumption_errors {key: message}. No value is pre-filled from anywhere else.
+#}
+<form method="post" action="/analyser/a/{{ analysis.id }}/assumptions" id="assumptions" class="entry-form">
+  <p class="form-help">ShaFin has no default rates. Enter each value with where it came from and
+    the date it applies to; reports print this table. Percentages are entered as percentages
+    (12.5 for 12.5%). Leave a value empty to remove it.</p>
+  <table class="entry-table">
+    <thead><tr><th scope="col">Assumption</th><th scope="col">Value</th>
+      <th scope="col">Source</th><th scope="col">Date</th></tr></thead>
+    <tbody>
+    {% for a in assumptions %}
+      {% set posted = assumption_form.get(a.key) %}
+      {% set saved = saved_assumptions.get(a.key) %}
+      {% set err = assumption_errors.get(a.key) %}
+      <tr>
+        <th scope="row">{{ a.label }}{% if a.optional %} <span class="entry-hint">optional</span>{% endif %}
+          <span class="entry-hint">{{ a.used_by }}{% if a.hint %}; {{ a.hint }}{% endif %}</span></th>
+        <td><input class="entry-input{% if err %} entry-input--error{% endif %}" name="{{ a.key }}:value"
+                   inputmode="decimal" autocomplete="off" aria-label="{{ a.label }} value"
+                   value="{{ posted[0] if posted else (saved.text if saved else '') }}">
+          <span class="entry-hint">{{ {'pct': '%', 'x': 'x', 'years': 'years', 'pkr': 'PKR per share'}[a.unit] }}</span>
+          {% if err %}<div class="entry-error" role="alert">{{ err }}</div>{% endif %}</td>
+        <td><input class="entry-input" name="{{ a.key }}:source" maxlength="200" aria-label="{{ a.label }} source"
+                   placeholder="e.g. central bank auction result"
+                   value="{{ posted[1] if posted else (saved.source if saved else '') }}"></td>
+        <td><input class="entry-input" type="date" name="{{ a.key }}:as_of" aria-label="{{ a.label }} date"
+                   value="{{ posted[2] if posted else (saved.as_of if saved else '') }}"></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="entry-actions">
+    <button type="submit" class="btn btn-primary">Save assumptions</button>
+  </div>
+</form>

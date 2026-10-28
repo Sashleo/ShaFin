@@ -1,0 +1,29 @@
+# Secrets and keys
+.env
+*.pem
+*.key
+*.crt
+
+# Databases and backups (encrypted or not, they hold your figures)
+/data/
+/backups/
+*.db
+*.db-wal
+*.db-shm
+*.sha256
+
+# Real annual reports for local testing only; never committed
+/local_test_pdfs/
+
+# Python and tool caches
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.cache/
+.tmp/
+.DS_Store
+
+# Local Claude Code state
+.claude/

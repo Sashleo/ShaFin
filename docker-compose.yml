@@ -1,0 +1,21 @@
+services:
+  shafin:
+    build: .
+    image: shafin:local
+    container_name: shafin
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - shafin_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fk", "https://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  shafin_data:
+    name: shafin_data

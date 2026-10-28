@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShaFin - Sign in</title>
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+</head>
+<body>
+
+{% if DEMO_MODE %}
+<div class="demo-banner" role="note">Demo mode: fictional companies only. Do not enter real figures.</div>
+{% endif %}
+
+<div class="login-page">
+  <div class="login-box">
+
+    <div class="login-logo">ShaFin</div>
+    <div class="login-tagline">Financial statement analysis from figures you enter.</div>
+
+    {% if DEMO_MODE %}
+    <div class="alert alert--warn">Demo login: user <code>admin</code>, password <code>{{ demo_password }}</code></div>
+    {% endif %}
+
+    {% if first_run %}
+    <div class="alert alert--warn">No owner account yet. The password you enter now becomes the
+      owner's password: at least 12 characters, mixing letters with digits or symbols.</div>
+    {% endif %}
+
+    {% if error %}
+    <div class="alert alert--neg" role="alert">{{ error }}</div>
+    {% endif %}
+
+    {% if lockout_seconds %}
+    <div class="alert alert--warn" role="alert">
+      Too many attempts. Try again in {{ lockout_seconds // 60 + 1 }} minutes.
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/login" {% if lockout_seconds %}style="pointer-events:none;opacity:0.5"{% endif %}>
+      <div class="form-group">
+        <label class="form-label" for="l-user">Username</label>
+        <input id="l-user" type="text" name="username" class="form-input" autocomplete="username"
+               value="admin" required {% if not totp_required %}autofocus{% endif %}>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="l-pass">Password</label>
+        <input id="l-pass" type="password" name="password" class="form-input"
+               autocomplete="{{ 'new-password' if first_run else 'current-password' }}" required>
+      </div>
+
+      {% if totp_required %}
+      <div class="form-group">
+        <label class="form-label" for="l-totp">Two-factor code</label>
+        <input id="l-totp" type="text" name="totp_code" class="form-input" inputmode="numeric"
+               pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" autofocus>
+      </div>
+      {% endif %}
+
+      {% if first_run %}
+      <div class="form-group">
+        <label class="form-label" for="l-boot">Bootstrap token (only when not on this computer)</label>
+        <input id="l-boot" type="password" name="bootstrap_token" class="form-input" autocomplete="off">
+      </div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:10px">
+        {{ 'Create owner account' if first_run else 'Sign in' }}
+      </button>
+    </form>
+
+    <div style="margin-top:24px; text-align:center; font-size:0.72em; color:var(--text-muted)">
+      ShaFin v{{ version }} · local instance · reports signed with ML-DSA-65 · not investment advice
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

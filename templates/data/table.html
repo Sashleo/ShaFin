@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ table }} - Data - ShaFin{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ table }}</div>
+    <div class="page-subtitle"><a href="/settings/data">All tables</a> · {{ "{:,}".format(total) }} rows{% if q %} match "{{ q }}"{% endif %}
+      {% if hidden %} · {{ hidden | length }} hidden: {{ hidden | join(", ") }}{% endif %}</div>
+  </div>
+  <a class="btn" href="/settings/data/{{ table }}.csv?{{ {'q': q, 'sort': sort, 'dir': dir} | urlencode }}">Export this view as CSV</a>
+</div>
+
+<form method="get" class="form-row mb-24">
+  <div class="form-group">
+    <label class="form-label" for="d-q">Filter (any column contains)</label>
+    <input id="d-q" class="form-input" name="q" value="{{ q }}">
+  </div>
+  <input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="dir" value="{{ dir }}">
+  <button class="btn" type="submit">Filter</button>
+</form>
+
+<div class="card" style="overflow-x:auto">
+  <table class="data-table">
+    <thead><tr>
+      {% if table == 'facts' %}<th>Lineage</th>{% endif %}
+      {% for c in columns %}
+      {% if c in hidden %}
+      <th class="col-hidden">{{ c }}</th>
+      {% else %}
+      {% set next_dir = 'desc' if (c == sort and dir == 'asc') else 'asc' %}
+      <th><a href="?{{ {'q': q, 'sort': c, 'dir': next_dir} | urlencode }}">{{ c }}{% if c == sort %} {{ '▲' if dir == 'asc' else '▼' }}{% endif %}</a></th>
+      {% endif %}
+      {% endfor %}
+    </tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        {% if table == 'facts' %}<td><a href="/settings/data/facts/{{ ids[loop.index0] }}/lineage">Lineage</a></td>{% endif %}
+        {% for v in row %}{% if columns[loop.index0] in hidden %}<td class="col-hidden">hidden</td>{% else %}<td>{{ v }}</td>{% endif %}{% endfor %}
+      </tr>
+    {% else %}
+      <tr><td colspan="{{ columns | length + 1 }}" class="empty-text">No rows.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<nav class="pager" aria-label="Pages">
+  {% if page > 1 %}<a class="btn btn-sm" href="?{{ {'q': q, 'sort': sort, 'dir': dir, 'page': page - 1} | urlencode }}">Previous 50</a>{% endif %}
+  <span>Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a class="btn btn-sm" href="?{{ {'q': q, 'sort': sort, 'dir': dir, 'page': page + 1} | urlencode }}">Next 50</a>{% endif %}
+</nav>
+{% endblock %}

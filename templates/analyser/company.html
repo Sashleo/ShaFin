@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ company.name }} - ShaFin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ company.name }}</div>
+    <div class="page-subtitle">{{ COMPANY_TYPES[company.company_type] }}{% if company.industry %} · {{ company.industry }}{% endif %}
+      · <a href="/analyser">All companies</a></div>
+  </div>
+</div>
+
+{% if error %}<div class="alert alert--neg" role="alert">{{ error }}</div>{% endif %}
+
+<div class="card mb-24">
+  <div class="card-title">Analyses</div>
+  {% if analyses %}
+  <table class="data-table">
+    <thead><tr><th>Name</th><th>Periods</th><th>Unit</th><th>Updated</th></tr></thead>
+    <tbody>
+    {% for a in analyses %}
+      <tr>
+        <td><a href="/analyser/a/{{ a.id }}">{{ a.name }}</a></td>
+        <td>{{ a.current_label }} and {{ a.prior_label }}</td>
+        <td>{{ UNITS[a.unit][0] }}</td>
+        <td>{{ a.updated_at[:16] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-text">No analyses yet.</p>
+  {% endif %}
+
+  <form method="post" action="/analyser/c/{{ company.id }}/analyses" class="form-row" style="margin-top:var(--s-4)">
+    <div class="form-group">
+      <label class="form-label" for="a-name">New analysis</label>
+      <input id="a-name" class="form-input" name="name" required maxlength="120" placeholder="e.g. Annual report 2025">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="a-cur">Current period</label>
+      <input id="a-cur" class="form-input" name="current_label" required maxlength="20" placeholder="FY2025">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="a-prior">Prior period</label>
+      <input id="a-prior" class="form-input" name="prior_label" required maxlength="20" placeholder="FY2024">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="a-unit">Figures are in</label>
+      <select id="a-unit" class="form-select" name="unit" required>
+        {% for key, (label, _) in UNITS.items() %}<option value="{{ key }}" {% if key == 'thousand' %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary" type="submit">Create</button>
+  </form>
+</div>
+
+<div class="card mb-24">
+  <div class="card-title">Company details</div>
+  <form method="post" action="/analyser/c/{{ company.id }}/edit" class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="e-name">Name</label>
+      <input id="e-name" class="form-input" name="name" required maxlength="120" value="{{ company.name }}">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="e-type">Company type</label>
+      <select id="e-type" class="form-select" name="company_type">
+        {% for key, label in COMPANY_TYPES.items() %}<option value="{{ key }}" {% if key == company.company_type %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="e-industry">Industry</label>
+      <input id="e-industry" class="form-input" name="industry" maxlength="80" value="{{ company.industry or '' }}">
+    </div>
+    <button class="btn" type="submit">Save</button>
+  </form>
+  <p class="form-help">Changing the type keeps every figure entered. Fields that do not apply to
+    the new type are hidden, not deleted, and come back if you change the type again.</p>
+</div>
+
+<details class="card">
+  <summary class="card-title" style="cursor:pointer">Delete this company</summary>
+  <p class="form-help">Deletes the company, every analysis, figure and assumption entered for it, and
+    its reports. Its encryption keys are destroyed, so the report files cannot be recovered.
+    The audit log keeps the record of the deletion.</p>
+  <form method="post" action="/analyser/c/{{ company.id }}/delete" class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="d-confirm">Type the company name to confirm</label>
+      <input id="d-confirm" class="form-input" name="confirm_name" required autocomplete="off">
+    </div>
+    <button class="btn btn-danger" type="submit">Delete permanently</button>
+  </form>
+</details>
+{% endblock %}

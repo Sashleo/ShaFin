@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    name: Quality gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Every template and static file the app loads must be tracked by git; a file that
+      # is only on a developer's disk is missing from the image and from every clone.
+      - name: Referenced files are tracked
+        run: python3 scripts/check_tracked.py
+
+      # The image builds liboqs (ML-KEM-768, ML-DSA-65) and installs SQLCipher, so the
+      # tests use the real cryptography. Python packages come from the hash-locked
+      # requirements-ci.txt.
+      - name: Build the image
+        run: docker build -t shafin:ci .
+
+      # Tests run with networking disabled; tests/conftest.py also fails any test that
+      # opens a socket. The secrets are throwaway values for this run only.
+      - name: Run check.sh with networking disabled
+        run: |
+          docker run --rm --network none \
+            -e APP_SECRET_KEY="$(openssl rand -hex 32)" \
+            -e DB_MASTER_PASSWORD="$(openssl rand -hex 16)" \
+            shafin:ci bash scripts/check.sh

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Report refused - ShaFin{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-title" style="color:var(--neg)">{{ title }}</div>
+  <p>{{ detail }}</p>
+  <p><a class="btn" href="/reports">Back to reports</a> <a class="btn" href="/analyser">Analyser</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,189 @@
+{#
+  Analysis results. Expects: result (intelligence.analyser.Analysis), analysis, charts.
+#}
+{% macro metric_rows(metrics) %}
+  {% for m in metrics %}
+  <tr>
+    <td>{{ m.label }}</td>
+    <td class="num">{% if m.computed %}{{ m.value | fmt(m.unit) }}{% else %}—{% endif %}</td>
+    <td class="formula">{{ m.formula }}</td>
+    <td class="note">{% if m.missing %}<span class="req">Required: {{ m.missing | join(", ") }}</span>{% endif %}{{ m.note }}</td>
+  </tr>
+  {% endfor %}
+{% endmacro %}
+
+<div class="card mb-24" id="health">
+  <div class="card-title">Flags</div>
+  {% set h = result.health %}
+  {% if h.score is not none %}
+  <p><span class="kpi-value">{{ h.score | fmt('one') }}</span> / 10
+    <span class="form-help">{{ h.passed }} of {{ h.evaluated }} thresholds met (thresholds are set in Settings)</span></p>
+  <table class="data-table">
+    <thead><tr><th>Metric</th><th>Value</th><th>Threshold</th><th>Result</th><th>Rationale</th></tr></thead>
+    <tbody>
+    {% for f in h.flags %}
+      <tr>
+        <td>{{ f.label }}</td>
+        <td class="num">{{ f.value | fmt(f.unit) }}</td>
+        <td>{{ f.op }} {{ f.threshold }}{% if f.unit == 'pct' %}%{% elif f.unit == 'x' %}x{% endif %}</td>
+        <td>{% if f.passed %}<span class="badge badge--pos">met</span>{% else %}<span class="badge badge--warn">flag</span>{% endif %}</td>
+        <td class="note">{{ f.rationale }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-text">No threshold could be evaluated yet: enter the figures the thresholds test.</p>
+  {% endif %}
+</div>
+
+<div class="card mb-24" id="checks">
+  <div class="card-title">Do the statements add up?</div>
+  <table class="data-table">
+    <thead><tr><th>Check</th><th>Result</th><th>Difference (PKR)</th></tr></thead>
+    <tbody>
+    {% for c in result.checks %}
+      <tr>
+        <td>{{ c.label }}</td>
+        <td>{% if c.passed is none %}<span class="badge badge--muted">not run</span>
+            {% elif c.passed %}<span class="badge badge--pos">adds up</span>
+            {% else %}<span class="badge badge--neg">does not add up</span>{% endif %}</td>
+        <td class="num">{% if c.passed is none %}<span class="req">Required: {{ c.missing | join(", ") }}</span>{% else %}{{ "{:,}".format(c.difference) }}{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="form-help">A difference up to one unit of the reporting unit is treated as rounding.</p>
+</div>
+
+<div class="card mb-24" id="ratios">
+  <div class="card-title">{% if result.is_bank %}Bank ratios{% else %}Ratios{% endif %}</div>
+  <div style="overflow-x:auto">
+  <table class="data-table">
+    <thead><tr><th>Metric</th><th>{{ analysis.current_label }}</th><th>Formula</th><th></th></tr></thead>
+    <tbody>{{ metric_rows(result.metrics) }}</tbody>
+  </table>
+  </div>
+</div>
+
+{% if result.is_bank %}
+<div class="card mb-24" id="valuation">
+  <div class="card-title">Valuation: price to book against return on equity</div>
+  <table class="data-table">
+    <thead><tr><th>Metric</th><th>Value</th><th>Formula</th><th></th></tr></thead>
+    <tbody>
+      {{ metric_rows(result.valuation) }}
+      {% set roe = result.metric('roe') %}
+      <tr><td>Return on equity (for comparison)</td>
+        <td class="num">{% if roe.computed %}{{ roe.value | fmt('pct') }}{% else %}—{% endif %}</td>
+        <td class="formula">{{ roe.formula }}</td><td></td></tr>
+    </tbody>
+  </table>
+  <p class="form-help">Altman Z: not applicable to banks. DCF: not applicable to banks.</p>
+</div>
+{% else %}
+{% set d = result.dupont %}
+<div class="card mb-24" id="dupont">
+  <div class="card-title">DuPont</div>
+  {% if d.roe is not none %}
+  <p class="num">ROE {{ d.roe | fmt('pct') }} = net margin {{ d.net_margin | fmt('pct') }}
+    × asset turnover {{ d.asset_turnover | fmt('x') }} × equity multiplier {{ d.equity_multiplier | fmt('x') }}</p>
+  {% elif d.missing %}<p class="req">Required: {{ d.missing | join(", ") }}</p>
+  {% else %}<p class="note">Not defined: revenue, total assets or total equity is zero.</p>{% endif %}
+</div>
+
+{% set z = result.altman %}
+<div class="card mb-24" id="altman">
+  <div class="card-title">{{ z.model.name }}</div>
+  {% if z.z is not none %}
+  <p><span class="kpi-value">{{ z.z | fmt('score') }}</span>
+    <span class="zone-badge zone-{{ z.zone }}">{{ z.zone }}</span>
+    <span class="form-help">safe above {{ z.model.safe_above | fmt('two') }}, distress below {{ z.model.distress_below | fmt('two') }}</span></p>
+  <table class="data-table"><tbody>
+    {% for name, val in z.components.items() %}<tr><td>{{ name }}</td><td class="num">{{ val | fmt('ratio') }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% elif z.missing %}<p class="req">Required: {{ z.missing | join(", ") }}</p>
+  {% else %}<p class="note">{{ z.note }}</p>{% endif %}
+  <p class="form-help">{{ z.model.citation }}</p>
+</div>
+
+{% set v = result.dcf %}
+<div class="card mb-24" id="dcf">
+  <div class="card-title">Discounted cash flow (FCFF)</div>
+  {% if v.missing %}
+    <p>The DCF does not run until these are entered:</p>
+    <ul class="req-list">{% for m in v.missing %}<li class="req">Required: {{ m }}</li>{% endfor %}</ul>
+  {% elif v.refused %}
+    <p class="req">{{ v.refused }}</p>
+  {% else %}
+  <table class="data-table">
+    <tbody>
+      <tr><td>Cost of equity (risk-free + beta × ERP)</td><td class="num">{{ v.cost_of_equity | fmt('pct') }}</td></tr>
+      <tr><td>Cost of debt</td><td class="num">{{ v.cost_of_debt | fmt('pct') }}</td></tr>
+      <tr><td colspan="2" class="note">{{ v.cost_of_debt_basis }}</td></tr>
+      <tr><td>WACC</td><td class="num">{{ v.wacc | fmt('pct') }}</td></tr>
+    </tbody>
+  </table>
+  <div style="overflow-x:auto">
+  <table class="data-table">
+    <thead><tr><th>Year</th><th>Revenue</th><th>NOPAT</th><th>D&amp;A</th><th>Capex</th><th>Δ working capital</th><th>FCFF</th><th>Present value</th></tr></thead>
+    <tbody>
+    {% for y in v.years %}
+      <tr><td>{{ y.year }}</td><td class="num">{{ y.revenue | fmt('pkr') }}</td><td class="num">{{ y.nopat | fmt('pkr') }}</td>
+        <td class="num">{{ y.da | fmt('pkr') }}</td><td class="num">{{ y.capex | fmt('pkr') }}</td>
+        <td class="num">{{ y.nwc_change | fmt('pkr') }}</td><td class="num">{{ y.fcff | fmt('pkr') }}</td>
+        <td class="num">{{ y.pv | fmt('pkr') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <table class="data-table">
+    <tbody>
+      <tr><td>Present value of FCFF</td><td class="num">{{ v.pv_fcff | fmt('pkr') }}</td></tr>
+      <tr><td>Terminal value (Gordon growth)</td><td class="num">{{ v.terminal_value | fmt('pkr') }}</td></tr>
+      <tr><td>Present value of terminal value</td><td class="num">{{ v.pv_terminal_value | fmt('pkr') }}
+        {% if v.terminal_share is not none %}<span class="form-help">({{ v.terminal_share | fmt('pct') }} of EV)</span>{% endif %}</td></tr>
+      <tr><td>Enterprise value</td><td class="num">{{ v.enterprise_value | fmt('pkr') }}</td></tr>
+      <tr><td>Less net debt (borrowings − cash)</td><td class="num">{{ v.net_debt | fmt('pkr') }}</td></tr>
+      <tr><td>Equity value</td><td class="num">{{ v.equity_value | fmt('pkr') }}</td></tr>
+      <tr><td><strong>Value per share</strong></td><td class="num"><strong>{{ v.per_share | fmt('per_share') }}</strong></td></tr>
+    </tbody>
+  </table>
+  <div class="card-subtitle">Sensitivity: value per share</div>
+  <div style="overflow-x:auto">
+  <table class="data-table">
+    <thead><tr><th>WACC \ growth</th>{% for g in v.sensitivity_growths %}<th>{{ g | fmt('pct') }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for w in v.sensitivity_waccs %}
+      <tr><th>{{ w | fmt('pct') }}</th>
+        {% for g in v.sensitivity_growths %}{% set cell = v.sensitivity[(w, g)] %}<td class="num">{% if cell is none %}n/a{% else %}{{ cell | fmt('per_share') }}{% endif %}</td>{% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card mb-24" id="bridge">
+  <div class="card-title">Profit bridge: {{ analysis.prior_label }} to {{ analysis.current_label }}</div>
+  {% set b = result.bridge %}
+  {% if b.components %}
+  <table class="data-table">
+    <tbody>
+      <tr><td>Profit after tax, {{ analysis.prior_label }}</td><td class="num">{{ b.start | rupees }}</td></tr>
+      {% for label, value in b.components %}<tr><td>{{ label }}</td><td class="num">{{ "{:+,}".format(value) }}</td></tr>{% endfor %}
+      <tr><td><strong>Profit after tax, {{ analysis.current_label }}</strong></td><td class="num"><strong>{{ b.end | rupees }}</strong></td></tr>
+    </tbody>
+  </table>
+  {% else %}<p class="req">Required: {{ b.missing | join(", ") }}</p>{% endif %}
+</div>
+
+{% for spec in charts %}
+<figure class="chart-card">
+  <button type="button" class="chart-open" aria-label="Open chart: {{ spec.title }}">
+    <div class="chart-frame"><canvas data-shafin-chart="{{ spec | tojson | forceescape }}"></canvas></div>
+  </button>
+  <figcaption>{{ spec.title }}</figcaption>
+</figure>
+{% endfor %}

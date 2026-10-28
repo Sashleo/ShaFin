@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ShaFin{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <script src="/static/js/htmx.min.js" defer></script>
+  <script src="/static/js/chart.umd.min.js" defer></script>
+  <script src="/static/js/charts.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+{% if DEMO_MODE %}
+<div class="demo-banner" role="note">
+  Demo mode: every company here is fictional and the data is reset with the demo volume.
+  Do not enter real figures.
+</div>
+{% endif %}
+
+{% set nav_items = [
+  ('/dashboard', 'dashboard', 'Dashboard'),
+  ('/analyser', 'analyser', 'Analyser'),
+  ('/reports', 'reports', 'Reports'),
+  ('/settings', 'settings', 'Settings'),
+  ('/settings/data', 'data', 'Data'),
+  ('/health', 'health', 'Health'),
+] %}
+
+<!-- Mobile top bar (below 900px) -->
+<header class="top-bar">
+  <span class="top-bar-logo">ShaFin</span>
+  <div style="display:flex;gap:var(--s-2);align-items:center">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <span id="theme-icon-m">&#9789;</span>
+    </button>
+    <button class="menu-btn" onclick="document.getElementById('mobile-nav').classList.add('open')" aria-label="Open menu">
+      &#9776;
+    </button>
+  </div>
+</header>
+
+<!-- Mobile nav overlay -->
+<div id="mobile-nav" class="mobile-nav" onclick="if(event.target===this)this.classList.remove('open')">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-logo">ShaFin</div>
+      <div class="sidebar-tagline">Financial statement analysis</div>
+    </div>
+    <nav class="sidebar-nav">
+      {% for href, key, label in nav_items %}
+      <a href="{{ href }}" class="nav-item" {% if active_page == key %}aria-current="page"{% endif %}
+         onclick="document.getElementById('mobile-nav').classList.remove('open')">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/logout" style="color:var(--text-muted)">Logout</a>
+    </div>
+  </aside>
+</div>
+
+<div class="app-shell">
+
+  <!-- Desktop sidebar (900px+) -->
+  <aside class="sidebar">
+
+    <div class="sidebar-brand" style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="sidebar-logo">ShaFin</div>
+        <div class="sidebar-tagline">Financial statement analysis</div>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span id="theme-icon">&#9789;</span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      {% for href, key, label in nav_items %}
+      <a href="{{ href }}" class="nav-item" {% if active_page == key %}aria-current="page"{% endif %}>
+        {{ label }}
+      </a>
+      {% endfor %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="/logout" style="color:var(--text-muted)">Logout</a>
+    </div>
+
+  </aside>
+
+  <main class="main-content" id="main">
+    <div class="page">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+</div>
+
+<div id="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Chart expand dialog (shared, one per page) -->
+<dialog id="chart-dialog" class="chart-dialog">
+  <div class="chart-dialog-header">
+    <span id="chart-dialog-title" style="font-weight:500"></span>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('chart-dialog').close()">Close</button>
+  </div>
+  <div class="chart-frame" id="chart-dialog-frame">
+    <canvas id="chart-dialog-canvas"></canvas>
+  </div>
+  <div class="chart-dialog-actions">
+    <button class="btn btn-sm" id="chart-dialog-data-btn" onclick="toggleChartData()">Show data</button>
+    <button class="btn btn-sm" onclick="downloadChartPng()">Download PNG</button>
+  </div>
+  <div id="chart-dialog-table" style="display:none;margin-top:var(--s-4);overflow-x:auto"></div>
+</dialog>
+
+<script>
+// Theme toggle
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  updateThemeIcons(next);
+  try { localStorage.setItem('shafin-theme', next); } catch(e) {}
+}
+
+function updateThemeIcons(theme) {
+  const icon = theme === 'dark' ? '☀' : '☽';
+  const el = document.getElementById('theme-icon');
+  const el2 = document.getElementById('theme-icon-m');
+  if (el) el.textContent = icon;
+  if (el2) el2.textContent = icon;
+}
+
+(function() {
+  try {
+    const saved = localStorage.getItem('shafin-theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+      updateThemeIcons(saved);
+    }
+  } catch(e) {}
+})();
+
+// Toast
+function showToast(msg, type = 'info', duration = 4000) {
+  const el = document.createElement('div');
+  el.className = 'toast toast--' + type;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+
+// HTMX error handler — catches both 4xx and 5xx
+document.addEventListener('htmx:responseError', (e) => {
+  const status = e.detail && e.detail.xhr ? e.detail.xhr.status : 0;
+  if (status >= 500) showToast('Something went wrong on the server.', 'neg');
+  else if (status === 401 || status === 403) showToast('Session expired — please log in again.', 'warn');
+  else if (status >= 400) showToast('Request could not be completed.', 'warn');
+});
+
+// Tab bar active state — update immediately on click so the underline tracks the user
+document.addEventListener('htmx:beforeRequest', (e) => {
+  const el = e.detail && e.detail.elt;
+  if (el && el.classList && el.classList.contains('tab-link')) {
+    const bar = el.closest('.tab-bar');
+    if (bar) {
+      bar.querySelectorAll('.tab-link').forEach(t => {
+        t.classList.remove('active');
+        t.removeAttribute('aria-current');
+      });
+      el.classList.add('active');
+      el.setAttribute('aria-current', 'page');
+    }
+  }
+});
+
+// Button loading state
+document.addEventListener('htmx:beforeRequest', (e) => {
+  const el = e.detail.elt;
+  if (el.tagName === 'BUTTON') {
+    el.classList.add('btn-loading');
+    el._originalText = el.innerHTML;
+    el.innerHTML = '<span class="spinner"></span> ' + el.innerHTML;
+  }
+});
+document.addEventListener('htmx:afterRequest', (e) => {
+  const el = e.detail.elt;
+  if (el.tagName === 'BUTTON' && el._originalText) {
+    el.classList.remove('btn-loading');
+    el.innerHTML = el._originalText;
+  }
+});
+
+// Chart dialog helpers
+var _dialogSpec = null;
+
+function openChartDialog(title, specJson) {
+  const dlg = document.getElementById('chart-dialog');
+  document.getElementById('chart-dialog-title').textContent = title;
+  document.getElementById('chart-dialog-table').style.display = 'none';
+  document.getElementById('chart-dialog-data-btn').textContent = 'Show data';
+  _dialogSpec = typeof specJson === 'string' ? JSON.parse(specJson) : specJson;
+
+  const frame = document.getElementById('chart-dialog-frame');
+  const canvas = document.getElementById('chart-dialog-canvas');
+
+  // Destroy any existing Chart.js instance
+  const existing = Chart.getChart(canvas);
+  if (existing) existing.destroy();
+
+  // Remove any dynamically inserted nodes (e.g. small_multiples grid) left over
+  // from a previous open — they are never part of the static dialog HTML.
+  Array.from(frame.children).forEach(child => {
+    if (child !== canvas) child.remove();
+  });
+  canvas.style.display = '';  // restore if smallMultiples hid it
+
+  if (window._drawChartSpec) window._drawChartSpec(canvas, _dialogSpec);
+  dlg.showModal();
+}
+
+function _cell(tag, text) {
+  const el = document.createElement(tag);
+  el.textContent = text == null ? '' : String(text);
+  return el;
+}
+
+function _table(headers, rows) {
+  const t = document.createElement('table');
+  t.className = 'data-table';
+  const hr = document.createElement('tr');
+  headers.forEach(h => hr.appendChild(_cell('th', h)));
+  t.appendChild(document.createElement('thead')).appendChild(hr);
+  const body = t.appendChild(document.createElement('tbody'));
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    r.forEach(v => tr.appendChild(_cell('td', v)));
+    body.appendChild(tr);
+  });
+  return t;
+}
+
+// Builds the data table with textContent only: chart labels are user-entered names.
+function toggleChartData() {
+  const tbl = document.getElementById('chart-dialog-table');
+  const btn = document.getElementById('chart-dialog-data-btn');
+  if (tbl.style.display !== 'none') {
+    tbl.style.display = 'none';
+    btn.textContent = 'Show data';
+    return;
+  }
+  tbl.replaceChildren();
+  const s = _dialogSpec;
+  if (s && s.labels && s.series) {
+    tbl.appendChild(_table([''].concat(s.series.map(sr => sr.name || '')),
+      s.labels.map((l, i) => [l].concat(s.series.map(sr => sr.data ? sr.data[i] : '')))));
+  } else {
+    const p = _cell('p', 'No tabular data available for this chart type.');
+    p.style.color = 'var(--text-muted)';
+    tbl.appendChild(p);
+  }
+  tbl.style.display = 'block';
+  btn.textContent = 'Hide data';
+}
+
+function downloadChartPng() {
+  const canvas = document.getElementById('chart-dialog-canvas');
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (document.getElementById('chart-dialog-title').textContent || 'chart') + '.png';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+}
+
+// Close dialog on backdrop click
+document.getElementById('chart-dialog').addEventListener('click', function(e) {
+  if (e.target === this) this.close();
+});
+
+// Destroy dialog chart and clean up injected nodes on close
+document.getElementById('chart-dialog').addEventListener('close', function() {
+  const frame = document.getElementById('chart-dialog-frame');
+  const canvas = document.getElementById('chart-dialog-canvas');
+  const existing = Chart.getChart(canvas);
+  if (existing) existing.destroy();
+  Array.from(frame.children).forEach(child => {
+    if (child !== canvas) child.remove();
+  });
+  canvas.style.display = '';
+});
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ analysis.name }} - {{ company.name }} - ShaFin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ company.name }}: {{ analysis.name }}</div>
+    <div class="page-subtitle">{{ COMPANY_TYPES[company.company_type] }} ·
+      {{ analysis.current_label }} against {{ analysis.prior_label }} ·
+      <a href="/analyser/c/{{ company.id }}">Company</a></div>
+  </div>
+  <form method="post" action="/analyser/a/{{ analysis.id }}/report">
+    <button type="submit" class="btn btn-primary">Generate signed report</button>
+  </form>
+</div>
+
+{% if flash %}<div class="alert alert--pos" role="status">{{ flash }}</div>{% endif %}
+{% if fact_errors or assumption_errors %}
+<div class="alert alert--neg" role="alert">Some values were not saved; they are marked below. Everything else was saved.</div>
+{% endif %}
+
+<nav class="section-nav" aria-label="Sections">
+  <a href="#figures">Figures</a> <a href="#assumptions">Assumptions</a> <a href="#health">Flags</a>
+  <a href="#checks">Checks</a> <a href="#ratios">Ratios</a>
+  {% if result.is_bank %}<a href="#valuation">Valuation</a>{% else %}<a href="#altman">Altman</a> <a href="#dcf">DCF</a>{% endif %}
+  <a href="#bridge">Profit bridge</a>
+</nav>
+
+<details class="card mb-24" open>
+  <summary class="card-title">Figures, as entered</summary>
+  {% include "components/entry_form.html" %}
+</details>
+
+<details class="card mb-24" {% if assumption_errors or not saved_assumptions %}open{% endif %}>
+  <summary class="card-title">Assumptions for this analysis</summary>
+  {% include "partials/assumptions.html" %}
+</details>
+
+{% include "partials/results.html" %}
+
+<details class="card">
+  <summary class="card-title" style="cursor:pointer">Delete this analysis</summary>
+  <p class="form-help">Deletes its figures and assumptions. An analysis with reports cannot be
+    deleted on its own.</p>
+  <form method="post" action="/analyser/a/{{ analysis.id }}/delete">
+    <button class="btn btn-danger" type="submit">Delete analysis</button>
+  </form>
+</details>
+{% endblock %}

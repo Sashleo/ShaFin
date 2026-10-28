@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Data - ShaFin{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Data</div>
+    <div class="page-subtitle">Every table in the database, read-only. Hashes, secrets, tokens, keys and
+      encrypted columns show as "hidden". Each view is recorded in the audit log.</div>
+  </div>
+</div>
+<div class="card">
+  <table class="data-table">
+    <thead><tr><th>Table</th><th>Rows</th></tr></thead>
+    <tbody>
+    {% for name, count in tables %}
+      <tr><td><a href="/settings/data/{{ name }}">{{ name }}</a></td><td class="num">{{ "{:,}".format(count) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

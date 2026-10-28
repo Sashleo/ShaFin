@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - ShaFin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle">Financial statement analysis from figures you enter.</div>
+  </div>
+  <a class="btn btn-primary" href="/analyser">Open the Analyser</a>
+</div>
+
+<div class="kpi-row mb-24">
+  <div class="kpi"><div class="kpi-label">Companies</div><div class="kpi-value">{{ companies | length }}</div></div>
+  <div class="kpi"><div class="kpi-label">Analyses</div><div class="kpi-value">{{ companies | sum(attribute='analysis_count') }}</div></div>
+  <div class="kpi"><div class="kpi-label">Signed reports</div><div class="kpi-value">{{ report_count }}</div></div>
+</div>
+
+<div class="card mb-24">
+  <div class="card-title">Recent analyses</div>
+  {% if recent %}
+  <table class="data-table">
+    <thead><tr><th>Company</th><th>Analysis</th><th>Type</th><th>Periods</th><th>Updated</th></tr></thead>
+    <tbody>
+    {% for a in recent %}
+      <tr>
+        <td>{{ a.company_name }}</td>
+        <td><a href="/analyser/a/{{ a.id }}">{{ a.name }}</a></td>
+        <td>{{ COMPANY_TYPES[a.company_type] }}</td>
+        <td>{{ a.current_label }} / {{ a.prior_label }}</td>
+        <td>{{ a.updated_at[:16] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-text">No analyses yet. <a href="/analyser">Add a company</a> to start.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-title">How ShaFin works</div>
+  <ol class="steps">
+    <li>Add a company and choose its type: manufacturer, non-manufacturer or bank.</li>
+    <li>Create an analysis and enter the current and prior year figures from the annual report, in the unit the report uses.</li>
+    <li>Enter the assumptions the models need, each with its source and date. Nothing is filled in for you.</li>
+    <li>Read the checks, ratios, models and flags, then generate a signed report.</li>
+  </ol>
+</div>
+{% endblock %}

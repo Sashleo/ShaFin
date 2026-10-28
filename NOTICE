@@ -1,0 +1,18 @@
+ShaFin
+Copyright 2026 Areesha Jamal Daudpota
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes third-party files, each under its own licence:
+
+- Chart.js 4.4.0 (static/js/chart.umd.min.js), (c) 2023 Chart.js Contributors,
+  MIT License. https://www.chartjs.org
+- htmx 1.9.12 (static/js/htmx.min.js), (c) Big Sky Software, BSD 2-Clause License.
+  https://htmx.org
+- IBM Plex Sans and IBM Plex Mono (static/fonts/), (c) IBM Corp., SIL Open Font
+  License 1.1. https://github.com/IBM/plex
+
+The Docker image also builds and installs, at build time and not as part of this
+repository:
+- liboqs 0.16.0 (Open Quantum Safe), MIT License.
+- The Python packages listed in requirements-ci.txt, each under its own licence.

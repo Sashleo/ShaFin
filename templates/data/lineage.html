@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Lineage - ShaFin{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Lineage: {{ label }}</div>
+    <div class="page-subtitle"><a href="/settings/data/facts">facts</a> · figure {{ fact.id }}</div>
+  </div>
+</div>
+<div class="card mb-24">
+  <table class="data-table"><tbody>
+    <tr><td>Value</td><td>{% if fact.value_rupees is not none %}{{ fact.value_rupees | rupees }}{% else %}{{ fact.value_number }}{% endif %}</td></tr>
+    <tr><td>As typed</td><td>{{ fact.entered_text }} ({{ fact.unit }})</td></tr>
+    <tr><td>Source</td><td>{{ fact.source }}{% if fact.page_ref %}, page {{ fact.page_ref }}{% endif %}</td></tr>
+    <tr><td>Analysis</td><td><a href="/analyser/a/{{ fact.analysis_id }}">{{ fact.company_name }}: {{ fact.analysis_name }}</a>,
+      {{ fact.current_label if fact.period == 'current' else fact.prior_label }}</td></tr>
+    <tr><td>Saved by</td><td>{{ fact.saved_by }}</td></tr>
+    <tr><td>Saved at</td><td>{{ fact.saved_at }}</td></tr>
+  </tbody></table>
+</div>
+<div class="card">
+  <div class="card-title">Change history (from the audit log)</div>
+  <table class="data-table">
+    <thead><tr><th>When</th><th>Who</th><th>Previous value</th><th>New value</th></tr></thead>
+    <tbody>
+    {% for h in history %}
+      <tr><td>{{ h.at }}</td><td>{{ h.by }}</td>
+        <td>{{ "—" if h.previous is none else h.previous }}</td>
+        <td>{{ "deleted" if h.new is none else h.new }}</td></tr>
+    {% else %}
+      <tr><td colspan="4" class="empty-text">No recorded changes.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="form-help">Money values are whole rupees; percentages are stored as fractions (0.15 is 15%).</p>
+</div>
+{% endblock %}

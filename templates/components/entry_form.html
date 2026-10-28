@@ -1,0 +1,105 @@
+{#
+  The entry form. Expects: company, analysis, groups [(statement, [Field])], periods,
+  values {(period, key): text}, fact_errors {(period, key): message}.
+  Money figures are typed in the analysis's unit; each shows its exact rupee value
+  ("= PKR ...") as you type, computed with integer arithmetic in the browser and
+  again on the server.
+#}
+<form method="post" action="/analyser/a/{{ analysis.id }}/facts" class="entry-form" id="figures">
+  <div class="entry-toolbar">
+    <label class="form-label" for="f-unit">Money figures are in</label>
+    <select id="f-unit" name="unit" class="form-select entry-unit-select">
+      {% for key, (label, factor) in UNITS.items() %}
+      <option value="{{ key }}" data-factor="{{ factor }}" {% if key == analysis.unit %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <span class="form-help">Changing the unit reinterprets the numbers in the boxes; saved figures are stored in whole rupees.</span>
+  </div>
+
+  {% for statement, fields in groups %}
+  <div class="entry-section">
+    <div class="entry-section-title">{{ statement }}</div>
+    <table class="entry-table">
+      <thead><tr><th scope="col">Figure</th>
+        {% for p in periods %}<th scope="col">{{ analysis.current_label if p == 'current' else analysis.prior_label }}</th>{% endfor %}
+      </tr></thead>
+      <tbody>
+      {% for f in fields %}
+        <tr>
+          <th scope="row">
+            {{ f.label }}
+            {% if f.hint %}<span class="entry-hint">{{ f.hint }}</span>{% endif %}
+          </th>
+          {% for p in periods %}
+          {% set name = p ~ ':' ~ f.key %}
+          {% set err = fact_errors.get((p, f.key)) %}
+          <td>
+            <input type="text" inputmode="decimal" name="{{ name }}" id="{{ name }}"
+                   value="{{ values.get((p, f.key), '') }}"
+                   class="entry-input{% if err %} entry-input--error{% endif %}"
+                   data-kind="{{ f.kind }}" autocomplete="off"
+                   aria-label="{{ f.label }}, {{ analysis.current_label if p == 'current' else analysis.prior_label }}"
+                   {% if err %}aria-invalid="true" aria-describedby="{{ name }}-err"{% endif %}>
+            {% if f.page_ref %}
+            <input type="text" name="{{ name }}_page" value="{{ values.get((p, f.key ~ '_page'), '') }}"
+                   class="entry-input entry-page" placeholder="page" maxlength="20"
+                   aria-label="{{ f.label }} page reference">
+            {% endif %}
+            {% if f.kind == 'money' %}<div class="entry-echo" aria-live="polite"></div>{% endif %}
+            {% if err %}<div class="entry-error" id="{{ name }}-err">{{ err }}</div>{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+
+  <div class="entry-actions">
+    <button type="submit" class="btn btn-primary">Save figures</button>
+    <span class="form-help">Empty boxes are not used. Clearing a saved figure deletes it; every change is recorded in the audit log.</span>
+  </div>
+</form>
+
+<script>
+(function () {
+  var form = document.getElementById('figures');
+  if (!form) return;
+  var unit = form.querySelector('#f-unit');
+
+  // Exact conversion with BigInt, mirroring intelligence/units.py.
+  function toRupees(text, factor) {
+    var s = String(text).trim().replace(/[, ]/g, '');
+    var neg = false;
+    if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
+    var m = /^(-)?(\d+)(?:\.(\d+))?$/.exec(s);
+    if (!m || (m[1] && neg)) return null;
+    if (m[1]) neg = true;
+    var dec = m[3] || '';
+    var scaled = BigInt(m[2] + dec) * BigInt(factor);
+    var div = 10n ** BigInt(dec.length);
+    if (scaled % div !== 0n) return 'fraction';
+    var v = scaled / div;
+    return neg ? -v : v;
+  }
+
+  function echo(input) {
+    var out = input.parentElement.querySelector('.entry-echo');
+    if (!out) return;
+    if (!input.value.trim()) { out.textContent = ''; return; }
+    var factor = unit.options[unit.selectedIndex].dataset.factor;
+    var r = toRupees(input.value, factor);
+    if (r === null) out.textContent = 'not a number';
+    else if (r === 'fraction') out.textContent = 'not a whole number of rupees';
+    else out.textContent = '= PKR ' + r.toLocaleString('en-US');
+  }
+
+  function all() { form.querySelectorAll('input[data-kind="money"]').forEach(echo); }
+  form.addEventListener('input', function (e) {
+    if (e.target.dataset && e.target.dataset.kind === 'money') echo(e.target);
+  });
+  unit.addEventListener('change', all);
+  all();
+})();
+</script>

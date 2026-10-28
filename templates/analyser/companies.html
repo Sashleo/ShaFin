@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Analyser - ShaFin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Analyser</div>
+    <div class="page-subtitle">Companies you analyse from figures you enter. Choose one, or add one.</div>
+  </div>
+</div>
+
+{% if error %}<div class="alert alert--neg" role="alert">{{ error }}</div>{% endif %}
+
+<div class="card mb-24">
+  <div class="card-title">Companies</div>
+  {% if companies %}
+  <table class="data-table">
+    <thead><tr><th>Name</th><th>Type</th><th>Industry</th><th>Analyses</th><th>Updated</th></tr></thead>
+    <tbody>
+    {% for c in companies %}
+      <tr>
+        <td><a href="/analyser/c/{{ c.id }}">{{ c.name }}</a></td>
+        <td>{{ COMPANY_TYPES[c.company_type] }}</td>
+        <td>{{ c.industry or "—" }}</td>
+        <td>{{ c.analysis_count }}</td>
+        <td>{{ c.updated_at[:10] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-text">No companies yet. Add the first one below.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-title">Add a company</div>
+  <form method="post" action="/analyser/companies" class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="c-name">Name</label>
+      <input id="c-name" class="form-input" name="name" required maxlength="120" placeholder="e.g. Example Textiles Ltd">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="c-type">Company type</label>
+      <select id="c-type" class="form-select" name="company_type" required>
+        <option value="">Choose…</option>
+        {% for key, label in COMPANY_TYPES.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="c-industry">Industry (optional)</label>
+      <input id="c-industry" class="form-input" name="industry" maxlength="80" placeholder="e.g. Textiles">
+    </div>
+    <button class="btn btn-primary" type="submit">Add company</button>
+  </form>
+  <p class="form-help">The type decides the entry fields and models: the original Altman Z for
+    manufacturers, Altman Z'' for non-manufacturers, and bank ratios with P/B and P/E for banks
+    (no Altman, no DCF). You can change it later without losing figures.</p>
+</div>
+{% endblock %}

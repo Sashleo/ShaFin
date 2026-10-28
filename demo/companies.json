@@ -1,0 +1,176 @@
+{
+  "_note": "Fictional companies for demo mode. Every name and figure is invented. Figures are in thousands of rupees. Each balance sheet balances, each profit chain adds up (gross profit, PBT, PAT) and each cash flow statement reconciles to the change in cash.",
+  "companies": [
+    {
+      "name": "Example Spinning Mills Ltd",
+      "company_type": "manufacturer",
+      "industry": "Textiles (fictional)",
+      "analyses": [{
+        "name": "Annual report 2025",
+        "current_label": "FY2025",
+        "prior_label": "FY2024",
+        "unit": "thousand",
+        "facts": {
+          "current": {
+            "revenue": "12,000,000", "cost_of_sales": "9,600,000", "gross_profit": "2,400,000",
+            "operating_profit": "1,300,000", "depreciation_amortisation": "450,000",
+            "finance_cost": "400,000", "profit_before_tax": "900,000", "tax_expense": "270,000",
+            "profit_after_tax": "630,000",
+            "cash": "300,000", "trade_receivables": "1,500,000", "inventory": "2,200,000",
+            "current_assets": "4,400,000", "total_assets": "11,000,000",
+            "trade_payables": "1,400,000", "short_term_borrowings": "1,800,000",
+            "current_liabilities": "3,600,000", "long_term_borrowings": "2,000,000",
+            "total_liabilities": "6,000,000", "retained_earnings": "3,000,000",
+            "total_equity": "5,000,000",
+            "cash_from_operations": "1,100,000", "capital_expenditure": "700,000",
+            "cash_from_investing": "-650,000", "cash_from_financing": "-350,000",
+            "shares_outstanding": "100000000"
+          },
+          "prior": {
+            "revenue": "10,500,000", "cost_of_sales": "8,500,000", "gross_profit": "2,000,000",
+            "operating_profit": "1,050,000", "depreciation_amortisation": "420,000",
+            "finance_cost": "380,000", "profit_before_tax": "670,000", "tax_expense": "201,000",
+            "profit_after_tax": "469,000",
+            "cash": "200,000", "trade_receivables": "1,400,000", "inventory": "2,000,000",
+            "current_assets": "4,000,000", "total_assets": "10,300,000",
+            "trade_payables": "1,300,000", "short_term_borrowings": "1,700,000",
+            "current_liabilities": "3,400,000", "long_term_borrowings": "2,100,000",
+            "total_liabilities": "5,900,000", "retained_earnings": "2,470,000",
+            "total_equity": "4,400,000", "shares_outstanding": "100000000"
+          }
+        },
+        "assumptions": {
+          "risk_free_rate": "12", "equity_risk_premium": "7", "beta": "1.1", "tax_rate": "29",
+          "terminal_growth": "5", "forecast_years": "5", "debt_weight": "40",
+          "revenue_growth": "10", "ebit_margin": "11", "da_pct_revenue": "3.8",
+          "capex_pct_revenue": "5", "nwc_pct_revenue": "15", "share_price": "45"
+        }
+      }]
+    },
+    {
+      "name": "Sample Logistics Services Ltd",
+      "company_type": "non_manufacturer",
+      "industry": "Logistics (fictional)",
+      "analyses": [{
+        "name": "Annual report 2025",
+        "current_label": "FY2025",
+        "prior_label": "FY2024",
+        "unit": "thousand",
+        "facts": {
+          "current": {
+            "revenue": "5,000,000", "cost_of_sales": "3,500,000", "gross_profit": "1,500,000",
+            "operating_profit": "700,000", "depreciation_amortisation": "300,000",
+            "finance_cost": "100,000", "profit_before_tax": "600,000", "tax_expense": "174,000",
+            "profit_after_tax": "426,000",
+            "cash": "400,000", "trade_receivables": "900,000", "inventory": "100,000",
+            "current_assets": "1,600,000", "total_assets": "4,800,000",
+            "trade_payables": "600,000", "short_term_borrowings": "300,000",
+            "current_liabilities": "1,100,000", "long_term_borrowings": "700,000",
+            "total_liabilities": "2,000,000", "retained_earnings": "1,800,000",
+            "total_equity": "2,800,000",
+            "cash_from_operations": "650,000", "capital_expenditure": "450,000",
+            "cash_from_investing": "-450,000", "cash_from_financing": "-100,000",
+            "shares_outstanding": "50000000"
+          },
+          "prior": {
+            "revenue": "4,400,000", "cost_of_sales": "3,100,000", "gross_profit": "1,300,000",
+            "operating_profit": "560,000", "depreciation_amortisation": "280,000",
+            "finance_cost": "110,000", "profit_before_tax": "450,000", "tax_expense": "130,500",
+            "profit_after_tax": "319,500",
+            "cash": "300,000", "trade_receivables": "850,000", "inventory": "90,000",
+            "current_assets": "1,440,000", "total_assets": "4,300,000",
+            "trade_payables": "560,000", "short_term_borrowings": "350,000",
+            "current_liabilities": "1,110,000", "long_term_borrowings": "800,000",
+            "total_liabilities": "2,110,000", "retained_earnings": "1,474,000",
+            "total_equity": "2,190,000", "shares_outstanding": "50000000"
+          }
+        },
+        "assumptions": {
+          "risk_free_rate": "12", "equity_risk_premium": "7", "beta": "0.9", "tax_rate": "29",
+          "terminal_growth": "5", "forecast_years": "5", "debt_weight": "20", "cost_of_debt": "13",
+          "revenue_growth": "12", "ebit_margin": "14", "da_pct_revenue": "6",
+          "capex_pct_revenue": "8", "nwc_pct_revenue": "10", "share_price": "60"
+        }
+      }]
+    },
+    {
+      "name": "Demo Commercial Bank Ltd",
+      "company_type": "bank",
+      "industry": "Banking (fictional)",
+      "analyses": [{
+        "name": "Annual report 2025",
+        "current_label": "FY2025",
+        "prior_label": "FY2024",
+        "unit": "thousand",
+        "facts": {
+          "current": {
+            "markup_earned": "60,000,000", "markup_expensed": "36,000,000",
+            "net_markup_income": "24,000,000", "non_markup_income": "6,000,000",
+            "operating_expenses": "15,000,000", "provisions": "2,000,000",
+            "profit_before_tax": "13,000,000", "profit_after_tax": "7,150,000",
+            "gross_advances": "300,000,000", "advance_provisions": "18,000,000",
+            "net_advances": "282,000,000", "npls": "21,000,000", "investments": "250,000,000",
+            "earning_assets": "560,000,000", "deposits": "520,000,000",
+            "casa_deposits": "380,000,000", "total_assets": "650,000,000",
+            "total_equity": "45,000,000", "car_reported": "17.4", "car_reported_page": "112",
+            "shares_outstanding": "1200000000"
+          },
+          "prior": {
+            "markup_earned": "52,000,000", "markup_expensed": "31,000,000",
+            "net_markup_income": "21,000,000", "non_markup_income": "5,000,000",
+            "operating_expenses": "13,500,000", "provisions": "2,500,000",
+            "profit_before_tax": "10,000,000", "profit_after_tax": "5,500,000",
+            "gross_advances": "270,000,000", "advance_provisions": "16,500,000",
+            "net_advances": "253,500,000", "npls": "20,000,000", "investments": "220,000,000",
+            "earning_assets": "500,000,000", "deposits": "470,000,000",
+            "casa_deposits": "335,000,000", "total_assets": "590,000,000",
+            "total_equity": "40,000,000", "car_reported": "16.1", "car_reported_page": "108",
+            "shares_outstanding": "1200000000"
+          }
+        },
+        "assumptions": {"share_price": "40"}
+      }]
+    },
+    {
+      "name": "Illustrative Cement Works Ltd",
+      "company_type": "manufacturer",
+      "industry": "Cement (fictional)",
+      "analyses": [{
+        "name": "Annual report 2025",
+        "current_label": "FY2025",
+        "prior_label": "FY2024",
+        "unit": "thousand",
+        "facts": {
+          "current": {
+            "revenue": "8,000,000", "cost_of_sales": "7,400,000", "gross_profit": "600,000",
+            "operating_profit": "200,000", "depreciation_amortisation": "500,000",
+            "finance_cost": "650,000", "profit_before_tax": "(450,000)", "tax_expense": "(90,000)",
+            "profit_after_tax": "(360,000)",
+            "cash": "100,000", "trade_receivables": "700,000", "inventory": "1,300,000",
+            "current_assets": "2,400,000", "total_assets": "14,000,000",
+            "trade_payables": "1,600,000", "short_term_borrowings": "2,600,000",
+            "current_liabilities": "4,800,000", "long_term_borrowings": "4,200,000",
+            "total_liabilities": "9,600,000", "retained_earnings": "900,000",
+            "total_equity": "4,400,000",
+            "cash_from_operations": "300,000", "capital_expenditure": "400,000",
+            "cash_from_investing": "-400,000", "cash_from_financing": "50,000",
+            "shares_outstanding": "200000000"
+          },
+          "prior": {
+            "revenue": "8,600,000", "cost_of_sales": "7,600,000", "gross_profit": "1,000,000",
+            "operating_profit": "600,000", "depreciation_amortisation": "480,000",
+            "finance_cost": "520,000", "profit_before_tax": "80,000", "tax_expense": "24,000",
+            "profit_after_tax": "56,000",
+            "cash": "150,000", "trade_receivables": "750,000", "inventory": "1,250,000",
+            "current_assets": "2,450,000", "total_assets": "14,100,000",
+            "trade_payables": "1,500,000", "short_term_borrowings": "2,300,000",
+            "current_liabilities": "4,400,000", "long_term_borrowings": "4,600,000",
+            "total_liabilities": "9,600,000", "retained_earnings": "1,260,000",
+            "total_equity": "4,500,000", "shares_outstanding": "200000000"
+          }
+        },
+        "assumptions": {"share_price": "12"}
+      }]
+    }
+  ]
+}

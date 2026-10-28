@@ -1,0 +1,33 @@
+# Demo mode: four fictional companies, a demo login and a banner on every page.
+#
+#   docker compose -f docker-compose.demo.yml up --build
+#   then open https://localhost:8001 and sign in as admin / shafin-demo-2026
+#
+# The demo listens on host port SHAFIN_PORT, 8001 unless set, so it can run beside
+# another service on 8000:  SHAFIN_PORT=8443 docker compose -f docker-compose.demo.yml up
+#
+# The secrets below are public demo values. Never use them, or this file, for real data;
+# use docker-compose.yml with your own .env for that. Remove the demo data with:
+#   docker compose -f docker-compose.demo.yml down -v
+services:
+  shafin-demo:
+    build: .
+    image: shafin:local
+    container_name: shafin-demo
+    ports:
+      - "127.0.0.1:${SHAFIN_PORT:-8001}:8000"
+    environment:
+      DEMO_MODE: "true"
+      APP_SECRET_KEY: "demo-only-public-secret-key-not-for-real-data-0001"
+      DB_MASTER_PASSWORD: "demo-only-public-db-password"
+    volumes:
+      - shafin_demo_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-fk", "https://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  shafin_demo_data:
+    name: shafin_demo_data

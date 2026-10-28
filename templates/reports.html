@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Reports - ShaFin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Reports</div>
+    <div class="page-subtitle">Generated from an analysis with "Generate signed report". Each file is
+      signed with ML-DSA-65, stored encrypted, and its signature is checked before every download.</div>
+  </div>
+</div>
+
+<div class="card mb-24">
+  {% if reports %}
+  <div style="overflow-x:auto">
+  <table class="data-table">
+    <thead><tr><th>Report</th><th>Generated</th><th>Signed by key</th><th>Download</th><th>Signatures</th></tr></thead>
+    <tbody>
+    {% for r in reports %}
+      <tr>
+        <td>{{ r.company_name }}: {{ r.analysis_name }}</td>
+        <td>{{ r.created_at[:16] }}</td>
+        <td><code>{{ r.signing_fingerprint }}</code> {{ r.signing_algo }}</td>
+        <td><a href="/reports/{{ r.id }}/pdf">PDF</a> · <a href="/reports/{{ r.id }}/docx">Word</a></td>
+        <td><a href="/reports/{{ r.id }}/pdf.sig">PDF .sig</a> · <a href="/reports/{{ r.id }}/docx.sig">Word .sig</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="empty-text">No reports yet. Open an analysis in the Analyser and choose "Generate signed report".</p>
+  {% endif %}
+</div>
+
+{% if signing_key %}
+<div class="card">
+  <div class="card-title">Signing key</div>
+  <p>{{ signing_key.algorithm }}, fingerprint <code>{{ signing_key.fingerprint }}</code>, created {{ signing_key.created_at[:10] }}.
+    <a href="/reports/signing-key.pub">Download the public key</a> to let others verify a report and its
+    <code>.sig</code> file with liboqs.</p>
+</div>
+{% endif %}
+{% endblock %}

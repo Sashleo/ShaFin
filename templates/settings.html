@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Settings - ShaFin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Settings</div>
+    <div class="page-subtitle">Security, flag thresholds, the audit log and your login. ShaFin keeps
+      no rates here: rates are assumptions entered per analysis.</div>
+  </div>
+  <a class="btn" href="/settings/data">Data page</a>
+</div>
+
+<div class="card mb-24">
+  <div class="card-title">Security</div>
+  <table class="data-table"><tbody>
+    <tr><td>Database and backups</td><td>SQLCipher, AES-256 (a classical cipher; not post-quantum)</td></tr>
+    <tr><td>Company keys</td><td>{{ kem }} + X25519 hybrid key encapsulation, combined with HKDF</td></tr>
+    <tr><td>Report signatures</td><td>{{ sig }} (post-quantum, NIST FIPS 204){% if signing_key %}, key <code>{{ signing_key.fingerprint }}</code>{% endif %}</td></tr>
+    <tr><td>Two-factor authentication</td><td>{% if totp_enabled %}<span class="badge badge--pos">on</span>{% else %}<span class="badge badge--warn">off</span> — the Data page needs it{% endif %}</td></tr>
+  </tbody></table>
+  <p class="form-help">ShaFin does not start without liboqs and these algorithms. See docs/SECURITY.md.</p>
+</div>
+
+<div class="card mb-24" id="thresholds">
+  <div class="card-title">Flag thresholds</div>
+  <p class="form-help">A computed metric that fails its threshold is flagged in the analysis, with the
+    rationale shown here. Percentages are entered as percentages. Every change is audited.</p>
+  {% if threshold_error %}<div class="alert alert--neg" role="alert">{{ threshold_error }}</div>{% endif %}
+  {% for ctype, label in COMPANY_TYPES.items() %}
+  <h3 class="card-subtitle">{{ label }}</h3>
+  <div style="overflow-x:auto">
+  <table class="data-table">
+    <thead><tr><th>Metric</th><th>Flag unless</th><th>Rationale</th><th>Changed</th><th></th></tr></thead>
+    <tbody>
+    {% for t in thresholds[ctype] %}
+      {% set m = catalogue[ctype].get(t.metric) %}
+      <tr>
+        <td>{{ m[0] if m else t.metric }}</td>
+        <td>{{ t.op }} {{ t.value }}{% if m and m[1] == 'pct' %}%{% elif m and m[1] == 'x' %}x{% elif m and m[1] == 'days' %} days{% endif %}</td>
+        <td class="note">{{ t.rationale }}</td>
+        <td>{{ t.updated_at[:10] }} by {{ t.updated_by }}</td>
+        <td><form method="post" action="/settings/thresholds/{{ t.id }}/delete">
+          <button class="btn btn-sm btn-ghost" type="submit" aria-label="Delete threshold {{ m[0] if m else t.metric }}">Delete</button></form></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="empty-text">No thresholds for this type.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <form method="post" action="/settings/thresholds" class="form-row">
+    <input type="hidden" name="company_type" value="{{ ctype }}">
+    <div class="form-group">
+      <label class="form-label" for="t-metric-{{ ctype }}">Metric</label>
+      <select class="form-select" id="t-metric-{{ ctype }}" name="metric">
+        {% for key, (mlabel, unit) in catalogue[ctype].items() %}<option value="{{ key }}">{{ mlabel }}{% if unit == 'pct' %} (%){% endif %}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="t-op-{{ ctype }}">Flag unless</label>
+      <select class="form-select" id="t-op-{{ ctype }}" name="op">
+        <option>&gt;=</option><option>&gt;</option><option>&lt;=</option><option>&lt;</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="t-value-{{ ctype }}">Value</label>
+      <input class="form-input" id="t-value-{{ ctype }}" name="value" inputmode="decimal" required>
+    </div>
+    <div class="form-group" style="flex:2">
+      <label class="form-label" for="t-why-{{ ctype }}">Rationale</label>
+      <input class="form-input" id="t-why-{{ ctype }}" name="rationale" maxlength="400" required>
+    </div>
+    <button class="btn btn-sm" type="submit">Add or replace</button>
+  </form>
+  {% endfor %}
+</div>
+
+<div class="card mb-24">
+  <div class="card-title">Audit log integrity</div>
+  <p class="form-help">The audit log is hash-chained: editing or deleting any entry breaks the chain.</p>
+  <div id="audit-result">{% include "partials/audit_report.html" %}</div>
+</div>
+
+<div class="card mb-24">
+  <div class="card-title">Change password</div>
+  <form hx-post="/settings/change-password" hx-target="#change-password-result" hx-swap="innerHTML" style="max-width:360px">
+    <div class="form-group">
+      <label class="form-label" for="cp-current">Current password</label>
+      <input id="cp-current" type="password" name="current_password" class="form-input" required autocomplete="current-password">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="cp-new">New password (12 characters or more)</label>
+      <input id="cp-new" type="password" name="new_password" class="form-input" required minlength="12" autocomplete="new-password">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="cp-confirm">Confirm new password</label>
+      <input id="cp-confirm" type="password" name="confirm_password" class="form-input" required autocomplete="new-password">
+    </div>
+    <button type="submit" class="btn btn-primary">Update password</button>
+  </form>
+  <div id="change-password-result" style="margin-top:var(--s-3);max-width:360px"></div>
+</div>
+
+<div class="card mb-24">
+  <div class="card-title">Two-factor authentication</div>
+  {% if not totp_enabled %}
+  <button class="btn" hx-post="/settings/setup-totp" hx-target="#totp-setup" hx-swap="innerHTML">Turn on 2FA</button>
+  <div id="totp-setup"></div>
+  {% else %}
+  <form hx-post="/settings/disable-totp" hx-confirm="Turn off two-factor authentication?"
+        hx-target="#totp-disable-result" hx-swap="innerHTML" class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="totp-disable-code">Current 2FA code</label>
+      <input id="totp-disable-code" class="form-input" name="totp_code" maxlength="6"
+             pattern="[0-9]{6}" inputmode="numeric" required autocomplete="one-time-code">
+    </div>
+    <button type="submit" class="btn btn-danger">Turn off 2FA</button>
+  </form>
+  <div id="totp-disable-result"></div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-title">System</div>
+  <p class="form-help">ShaFin {{ version }} · database {{ db_path }}</p>
+</div>
+{% endblock %}

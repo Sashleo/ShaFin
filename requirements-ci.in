@@ -1,0 +1,39 @@
+# requirements-ci.in - ShaFin's direct dependencies. The Docker image and CI install the
+# hash-locked requirements-ci.txt generated from this file:
+#
+#   pip-compile --generate-hashes requirements-ci.in -o requirements-ci.txt
+#
+# Run it in a python:3.11-slim container after changing anything here.
+
+# Web
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+jinja2==3.1.4
+httpx==0.27.2
+
+# Security
+argon2-cffi==23.1.0
+cryptography==43.0.1
+pyotp==2.9.0
+qrcode[pil]==7.4.2
+# Needs the liboqs C library, which the Dockerfile builds.
+liboqs-python==0.16.0
+# Needs libsqlcipher-dev, which the Dockerfile installs.
+pysqlcipher3==1.2.0
+
+# Reports
+weasyprint==61.2
+pydyf==0.8.0
+python-docx==1.1.2
+matplotlib==3.9.2
+
+# Settings and logging
+pydantic==2.9.2
+pydantic-settings==2.5.2
+structlog==24.4.0
+
+# Quality gate
+pytest==8.3.3
+ruff==0.6.9
+vulture==2.11
